@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -68,8 +68,10 @@ const navigation: NavItem[] = [
   },
 ];
 
-function getInitialCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
+/**
+ * 从 localStorage 读取侧栏折叠状态（仅客户端调用，避免 SSR/客户端不一致导致 hydration 报错）
+ */
+function readCollapsedFromStorage(): boolean {
   try {
     const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
     return stored === "true";
@@ -80,7 +82,12 @@ function getInitialCollapsed(): boolean {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(getInitialCollapsed);
+  /** 服务端与客户端首屏统一为 false，挂载后再从 localStorage 同步，避免 hydration mismatch */
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    setCollapsed(readCollapsedFromStorage());
+  }, []);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(["书记课题", "党员发展", "支部换届"]);
 
   const toggleCollapsed = () => {
